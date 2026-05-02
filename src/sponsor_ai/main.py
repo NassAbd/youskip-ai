@@ -6,6 +6,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from sponsor_ai.cache import CacheManager
 from sponsor_ai.config import Settings, get_settings
 from sponsor_ai.detector import detect_segments
+from sponsor_ai.llm import detect_with_llm
+from sponsor_ai.refiner import refine_segments
 from sponsor_ai.schemas import AnalyzeResponse
 from sponsor_ai.transcript import build_windows, fetch_transcript
 
@@ -48,11 +50,17 @@ def analyze_video(video_id: str) -> AnalyzeResponse:
     # Fetch transcript
     raw_entries = fetch_transcript(video_id)
 
-    # Build sliding windows
-    chunks = build_windows(raw_entries, window_seconds=_settings.window_seconds)
-
-    # Detect sponsor segments
-    segments = detect_segments(chunks, _settings)
+    # Strategy: Try LLM first if enabled, fallback to Embeddings
+    segments: list[SponsorSegment] | None = None
+    
+    if _settings.use_llm:
+        segments = detect_with_llm(raw_entries, _settings)
+    
+    if segments is None:
+        # Fallback to Embedding-based detection
+        chunks = build_windows(raw_entries, window_seconds=_settings.window_seconds)
+        raw_segments = detect_segments(chunks, _settings)
+        segments = refine_segments(raw_segments, raw_entries, _settings)
 
     # Build response
     response = AnalyzeResponse(video_id=video_id, segments=segments)

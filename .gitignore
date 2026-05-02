@@ -6,6 +6,11 @@ dist/
 wheels/
 *.egg-info
 
+# Environment
+.env
+.env.local
+.env.*
+
 # Virtual environments
 .venv
 
@@ -13,3 +18,5 @@ wheels/
 .cache/
 .ruff_cache/
 .pytest_cache/
+# Debug
+scratch/
