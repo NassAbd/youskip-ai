@@ -199,27 +199,35 @@
    */
   function loadSettings() {
     if (typeof chrome !== "undefined" && chrome.storage) {
-      chrome.storage.sync.get(["enabled", "apiUrl"], (result) => {
-        if (result.enabled !== undefined) enabled = result.enabled;
+      chrome.storage.local.get(["enabled", "apiUrl"], (result) => {
+        enabled = result.enabled !== false; // Default to true
         if (result.apiUrl) apiUrl = result.apiUrl;
+        console.log(`[YouSkipAI] Settings loaded: enabled=${enabled}, apiUrl=${apiUrl}`);
       });
 
       // Listen for settings changes from the popup
-      chrome.storage.onChanged.addListener((changes) => {
+      chrome.storage.onChanged.addListener((changes, area) => {
+        if (area !== "local") return;
+
         if (changes.enabled) {
           enabled = changes.enabled.newValue;
-          if (enabled && currentVideoId) {
-            onVideoChange(currentVideoId);
-            currentVideoId = null; // Force re-analysis
+          console.log(`[YouSkipAI] Extension ${enabled ? "Enabled" : "Disabled"}`);
+          if (enabled) {
+            const vid = getVideoId();
+            if (vid) {
+              currentVideoId = null; // Reset to force re-analysis
+              onVideoChange(vid);
+            }
           } else {
             stopSkipMonitor();
+            segments = [];
           }
         }
         if (changes.apiUrl) {
           apiUrl = changes.apiUrl.newValue || DEFAULT_API_URL;
-          // Re-analyze current video with new API URL
-          if (currentVideoId) {
-            const vid = currentVideoId;
+          console.log(`[YouSkipAI] API URL updated: ${apiUrl}`);
+          const vid = getVideoId();
+          if (vid && enabled) {
             currentVideoId = null;
             onVideoChange(vid);
           }
