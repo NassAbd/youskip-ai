@@ -1,0 +1,245 @@
+/**
+ * Sponsor-AI — Content Script
+ *
+ * Injected into youtube.com pages. Monitors navigation, fetches sponsor
+ * segments from the backend API, and skips them in real-time.
+ */
+
+(() => {
+  "use strict";
+
+  // ── State ──────────────────────────────────────────────────────────
+  const DEFAULT_API_URL = "http://localhost:8000";
+  let currentVideoId = null;
+  let segments = [];
+  let enabled = true;
+  let apiUrl = DEFAULT_API_URL;
+  let skipTimerId = null;
+  let notificationTimerId = null;
+
+  // ── Helpers ────────────────────────────────────────────────────────
+
+  /**
+   * Extract the video_id from the current YouTube URL.
+   * @returns {string|null} Video ID or null if not a watch page.
+   */
+  function getVideoId() {
+    const params = new URLSearchParams(window.location.search);
+    return params.get("v");
+  }
+
+  /**
+   * Get the YouTube HTML5 video element.
+   * @returns {HTMLVideoElement|null}
+   */
+  function getVideoElement() {
+    return document.querySelector("video.html5-main-video") || document.querySelector("video");
+  }
+
+  // ── Notification Overlay ───────────────────────────────────────────
+
+  /**
+   * Show a discreet notification overlay on the video player.
+   * @param {string} message - Text to display.
+   * @param {number} durationMs - How long to show the notification.
+   */
+  function showNotification(message, durationMs = 3000) {
+    // Remove any existing notification
+    const existing = document.getElementById("sponsor-ai-notification");
+    if (existing) existing.remove();
+    if (notificationTimerId) clearTimeout(notificationTimerId);
+
+    const overlay = document.createElement("div");
+    overlay.id = "sponsor-ai-notification";
+    overlay.textContent = message;
+
+    // Insert into the video player container for proper positioning
+    const playerContainer =
+      document.querySelector("#movie_player") || document.querySelector(".html5-video-player");
+    if (playerContainer) {
+      playerContainer.style.position = "relative";
+      playerContainer.appendChild(overlay);
+    } else {
+      document.body.appendChild(overlay);
+    }
+
+    // Trigger entrance animation
+    requestAnimationFrame(() => overlay.classList.add("sponsor-ai-visible"));
+
+    notificationTimerId = setTimeout(() => {
+      overlay.classList.remove("sponsor-ai-visible");
+      overlay.addEventListener("transitionend", () => overlay.remove(), { once: true });
+      // Fallback removal if transition doesn't fire
+      setTimeout(() => overlay.remove(), 500);
+    }, durationMs);
+  }
+
+  // ── API Communication ──────────────────────────────────────────────
+
+  /**
+   * Fetch sponsor segments from the backend API.
+   * @param {string} videoId - YouTube video ID.
+   * @returns {Promise<Array<{start: number, end: number, type: string, confidence: number}>>}
+   */
+  async function fetchSegments(videoId) {
+    try {
+      const response = await fetch(`${apiUrl}/analyze/${videoId}`);
+      if (!response.ok) {
+        console.warn(`[Sponsor-AI] API returned ${response.status} for ${videoId}`);
+        return [];
+      }
+      const data = await response.json();
+      return data.segments || [];
+    } catch (error) {
+      console.warn(`[Sponsor-AI] API unreachable: ${error.message}`);
+      return [];
+    }
+  }
+
+  // ── Skip Logic ─────────────────────────────────────────────────────
+
+  /**
+   * Check if the current playback time falls within a sponsor segment
+   * and skip past it if so.
+   */
+  function checkAndSkip() {
+    if (!enabled || segments.length === 0) return;
+
+    const video = getVideoElement();
+    if (!video) return;
+
+    const currentTime = video.currentTime;
+
+    for (const seg of segments) {
+      // Allow a small tolerance window (0.5s) to catch the segment entry
+      if (currentTime >= seg.start && currentTime < seg.end - 0.5) {
+        console.log(
+          `[Sponsor-AI] Skipping sponsor: ${seg.start.toFixed(1)}s → ${seg.end.toFixed(1)}s (confidence: ${seg.confidence})`
+        );
+        video.currentTime = seg.end;
+        showNotification("⚡ Sponsor sauté par Sponsor-AI");
+        break;
+      }
+    }
+  }
+
+  /**
+   * Start the skip-checking interval.
+   */
+  function startSkipMonitor() {
+    stopSkipMonitor();
+    // Check every 500ms — lightweight and responsive enough
+    skipTimerId = setInterval(checkAndSkip, 500);
+  }
+
+  /**
+   * Stop the skip-checking interval.
+   */
+  function stopSkipMonitor() {
+    if (skipTimerId) {
+      clearInterval(skipTimerId);
+      skipTimerId = null;
+    }
+  }
+
+  // ── Video Change Detection ─────────────────────────────────────────
+
+  /**
+   * Handle a new video being loaded.
+   * @param {string} videoId - The new video's ID.
+   */
+  async function onVideoChange(videoId) {
+    if (videoId === currentVideoId) return;
+    currentVideoId = videoId;
+    segments = [];
+    stopSkipMonitor();
+
+    if (!enabled) return;
+
+    console.log(`[Sponsor-AI] Analyzing video: ${videoId}`);
+    segments = await fetchSegments(videoId);
+
+    if (segments.length > 0) {
+      console.log(`[Sponsor-AI] Found ${segments.length} sponsor segment(s)`);
+      showNotification(`🔍 ${segments.length} sponsor(s) détecté(s)`, 4000);
+      startSkipMonitor();
+    } else {
+      console.log("[Sponsor-AI] No sponsor segments detected");
+    }
+  }
+
+  // ── Navigation Observer ────────────────────────────────────────────
+  // YouTube is a SPA — standard page loads don't fire on navigation.
+  // We use a MutationObserver on the <title> as a reliable proxy for
+  // navigation events, combined with the yt-navigate-finish event.
+
+  /**
+   * Poll-check the current URL for a video ID change.
+   */
+  function checkForVideoChange() {
+    const videoId = getVideoId();
+    if (videoId && videoId !== currentVideoId) {
+      onVideoChange(videoId);
+    }
+  }
+
+  // Listen for YouTube's SPA navigation event
+  window.addEventListener("yt-navigate-finish", checkForVideoChange);
+
+  // Fallback: observe URL changes via popstate
+  window.addEventListener("popstate", checkForVideoChange);
+
+  // Fallback: periodic check (handles edge cases with player mini-nav)
+  setInterval(checkForVideoChange, 2000);
+
+  // ── Settings Sync ──────────────────────────────────────────────────
+
+  /**
+   * Load saved settings from chrome.storage.
+   */
+  function loadSettings() {
+    if (typeof chrome !== "undefined" && chrome.storage) {
+      chrome.storage.sync.get(["enabled", "apiUrl"], (result) => {
+        if (result.enabled !== undefined) enabled = result.enabled;
+        if (result.apiUrl) apiUrl = result.apiUrl;
+      });
+
+      // Listen for settings changes from the popup
+      chrome.storage.onChanged.addListener((changes) => {
+        if (changes.enabled) {
+          enabled = changes.enabled.newValue;
+          if (enabled && currentVideoId) {
+            onVideoChange(currentVideoId);
+            currentVideoId = null; // Force re-analysis
+          } else {
+            stopSkipMonitor();
+          }
+        }
+        if (changes.apiUrl) {
+          apiUrl = changes.apiUrl.newValue || DEFAULT_API_URL;
+          // Re-analyze current video with new API URL
+          if (currentVideoId) {
+            const vid = currentVideoId;
+            currentVideoId = null;
+            onVideoChange(vid);
+          }
+        }
+      });
+    }
+  }
+
+  // ── Init ───────────────────────────────────────────────────────────
+
+  function init() {
+    loadSettings();
+    checkForVideoChange();
+    console.log("[Sponsor-AI] Content script loaded");
+  }
+
+  // Run when DOM is ready
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", init);
+  } else {
+    init();
+  }
+})();

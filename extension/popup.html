@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sponsor-AI</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="popup-container">
+    <!-- Header -->
+    <header class="popup-header">
+      <div class="logo-row">
+        <img src="icons/icon48.png" alt="Sponsor-AI" class="logo-icon" width="28" height="28">
+        <h1>Sponsor-AI</h1>
+      </div>
+      <p class="tagline">Détection IA de sponsors YouTube</p>
+    </header>
+
+    <!-- Toggle -->
+    <section class="toggle-section">
+      <label class="toggle-label" for="toggle-enabled">
+        <span class="toggle-text">Détection active</span>
+        <div class="toggle-switch">
+          <input type="checkbox" id="toggle-enabled" checked>
+          <span class="toggle-slider"></span>
+        </div>
+      </label>
+    </section>
+
+    <!-- Status -->
+    <section class="status-section" id="status-section">
+      <div class="status-indicator" id="status-indicator">
+        <span class="status-dot" id="status-dot"></span>
+        <span class="status-text" id="status-text">Vérification...</span>
+      </div>
+    </section>
+
+    <!-- API Configuration -->
+    <section class="config-section">
+      <label class="config-label" for="api-url">URL de l'API</label>
+      <div class="input-row">
+        <input
+          type="url"
+          id="api-url"
+          placeholder="http://localhost:8000"
+          spellcheck="false"
+          autocomplete="off"
+        >
+        <button id="save-url" class="btn-save" title="Sauvegarder">✓</button>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="popup-footer">
+      <span>v0.1.0</span>
+      <a href="https://github.com/sponsor-ai" target="_blank" rel="noopener">GitHub</a>
+    </footer>
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html>

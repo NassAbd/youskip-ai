@@ -1,0 +1,42 @@
+/* ── Sponsor-AI Notification Overlay ──────────────────────────────── */
+/* Injected into YouTube pages via content script.                    */
+
+#sponsor-ai-notification {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  z-index: 9999;
+
+  padding: 10px 18px;
+  border-radius: 8px;
+
+  /* Glassmorphism styling */
+  background: rgba(15, 15, 15, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow:
+    0 4px 24px rgba(0, 0, 0, 0.4),
+    0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+
+  /* Typography */
+  font-family: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  color: #e0e0e0;
+  letter-spacing: 0.01em;
+
+  /* Animation */
+  opacity: 0;
+  transform: translateY(-8px);
+  transition:
+    opacity 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+    transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+
+  pointer-events: none;
+}
+
+#sponsor-ai-notification.sponsor-ai-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
