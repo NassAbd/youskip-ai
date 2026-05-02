@@ -8,11 +8,11 @@ from youskip_ai.config import Settings, get_settings
 from youskip_ai.detector import detect_segments
 from youskip_ai.llm import detect_with_llm
 from youskip_ai.refiner import refine_segments
-from youskip_ai.schemas import AnalyzeResponse
+from youskip_ai.schemas import AnalyzeResponse, SponsorSegment
 from youskip_ai.transcript import build_windows, fetch_transcript
 
 app = FastAPI(
-    title="Sponsor-AI",
+    title="YouSkipAI",
     description="Détection automatique de segments sponsorisés dans les vidéos YouTube.",
     version="0.1.0",
 )
@@ -85,6 +85,16 @@ def analyze_endpoint(video_id: str) -> AnalyzeResponse:
         return analyze_video(video_id)
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@app.get("/stats")
+def get_stats():
+    """Retrieve Gemini API usage metrics and general stats."""
+    from youskip_ai.llm import METRICS
+    return {
+        "api_usage": METRICS,
+        "cache_size": len(list(Path(_settings.cache_dir).glob("*.json"))) if Path(_settings.cache_dir).exists() else 0
+    }
 
 
 @app.get("/health")

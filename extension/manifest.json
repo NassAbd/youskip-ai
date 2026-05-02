@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "Sponsor-AI",
+  "name": "YouSkipAI",
   "version": "0.1.0",
   "description": "Détecte et saute automatiquement les segments sponsorisés dans les vidéos YouTube grâce à l'IA.",
   "permissions": ["storage", "activeTab"],

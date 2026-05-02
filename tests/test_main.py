@@ -4,11 +4,11 @@ from unittest.mock import MagicMock, patch
 
 from fastapi.testclient import TestClient
 
-from sponsor_ai.main import app
-from sponsor_ai.schemas import AnalyzeResponse, SponsorSegment
+from youskip_ai.main import app
+from youskip_ai.schemas import AnalyzeResponse, SponsorSegment
 
 
-@patch("sponsor_ai.main.analyze_video")
+@patch("youskip_ai.main.analyze_video")
 class TestAnalyzeEndpoint:
     """Integration tests for GET /analyze/{video_id}."""
 

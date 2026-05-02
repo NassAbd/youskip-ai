@@ -1,8 +1,8 @@
 """Tests for the refiner module — merging and alignment."""
 
-from sponsor_ai.config import Settings
-from sponsor_ai.refiner import refine_segments
-from sponsor_ai.schemas import SponsorSegment
+from youskip_ai.config import Settings
+from youskip_ai.refiner import refine_segments
+from youskip_ai.schemas import SponsorSegment
 
 
 def test_refine_merges_close_segments() -> None:

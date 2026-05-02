@@ -5,8 +5,8 @@ from pathlib import Path
 
 import pytest
 
-from sponsor_ai.cache import CacheManager
-from sponsor_ai.schemas import AnalyzeResponse, SponsorSegment
+from youskip_ai.cache import CacheManager
+from youskip_ai.schemas import AnalyzeResponse, SponsorSegment
 
 
 @pytest.fixture

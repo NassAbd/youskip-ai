@@ -2,9 +2,9 @@
 
 import numpy as np
 
-from sponsor_ai.config import Settings
-from sponsor_ai.detector import compute_similarities, detect_segments
-from sponsor_ai.schemas import SponsorSegment, TranscriptChunk
+from youskip_ai.config import Settings
+from youskip_ai.detector import compute_similarities, detect_segments
+from youskip_ai.schemas import SponsorSegment, TranscriptChunk
 
 
 class TestComputeSimilarities:

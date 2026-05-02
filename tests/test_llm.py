@@ -3,8 +3,8 @@
 import json
 from unittest.mock import MagicMock, patch
 
-from sponsor_ai.config import Settings
-from sponsor_ai.llm import detect_with_llm
+from youskip_ai.config import Settings
+from youskip_ai.llm import detect_with_llm
 
 
 def test_detect_with_llm_success() -> None:

@@ -4,15 +4,15 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from sponsor_ai.config import Settings
-from sponsor_ai.schemas import TranscriptChunk
-from sponsor_ai.transcript import build_windows, fetch_transcript
+from youskip_ai.config import Settings
+from youskip_ai.schemas import TranscriptChunk
+from youskip_ai.transcript import build_windows, fetch_transcript
 
 
 class TestFetchTranscript:
     """Tests for the youtube-transcript-api wrapper."""
 
-    @patch("sponsor_ai.transcript.YouTubeTranscriptApi")
+    @patch("youskip_ai.transcript.YouTubeTranscriptApi")
     def test_returns_raw_entries(self, mock_api_class: MagicMock) -> None:
         """Should return list of dicts with text/start/duration keys."""
         mock_transcript = MagicMock()
@@ -29,7 +29,7 @@ class TestFetchTranscript:
         assert len(result) == 1
         assert result[0]["text"] == "hello"
 
-    @patch("sponsor_ai.transcript.YouTubeTranscriptApi")
+    @patch("youskip_ai.transcript.YouTubeTranscriptApi")
     def test_no_transcript_raises(self, mock_api_class: MagicMock) -> None:
         """Should raise ValueError when no transcript is available."""
         mock_api = mock_api_class.return_value

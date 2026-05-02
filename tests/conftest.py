@@ -2,7 +2,7 @@
 
 import pytest
 
-from sponsor_ai.config import Settings
+from youskip_ai.config import Settings
 
 
 @pytest.fixture

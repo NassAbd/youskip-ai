@@ -1,0 +1,7 @@
+- README mis à jour et anglais
+- Statistiques de Temps Gagné : Un tableau de bord dans l'extension 
+qui affiche le nombre de minutes (ou d'heures) de publicités que l'IA a évité de regarder.
+C'est très gratifiant pour l'utilisateur.
+- Renommer l'app "YouSkipAI" (YSA) 
+- Interface de l'extension en anglais
+- Métriques sur l'utilisation API de Gemini (nombre de requêtes, de token, etc.)

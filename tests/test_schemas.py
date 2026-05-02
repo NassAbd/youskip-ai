@@ -3,7 +3,7 @@
 import pytest
 from pydantic import ValidationError
 
-from sponsor_ai.schemas import AnalyzeResponse, ErrorResponse, SponsorSegment, TranscriptChunk
+from youskip_ai.schemas import AnalyzeResponse, ErrorResponse, SponsorSegment, TranscriptChunk
 
 
 class TestSponsorSegment:

@@ -15,6 +15,14 @@ from youskip_ai.schemas import SponsorSegment
 
 logger = logging.getLogger(__name__)
 
+# Global session metrics
+METRICS = {
+    "total_requests": 0,
+    "prompt_tokens": 0,
+    "candidates_tokens": 0,
+    "total_tokens": 0
+}
+
 SYSTEM_PROMPT = """You are an expert YouTube content analyst. Your task is to identify "Sponsor Segments" in video transcripts.
 
 A Sponsor Segment is:
@@ -69,6 +77,14 @@ def detect_with_llm(
 
         if not response.text:
             return None
+
+        # Update metrics
+        if hasattr(response, 'usage_metadata'):
+            usage = response.usage_metadata
+            METRICS["total_requests"] += 1
+            METRICS["prompt_tokens"] += getattr(usage, "prompt_token_count", 0)
+            METRICS["candidates_tokens"] += getattr(usage, "candidates_token_count", 0)
+            METRICS["total_tokens"] += getattr(usage, "total_token_count", 0)
 
         # Parse the JSON response
         data = json.loads(response.text)

@@ -1,5 +1,5 @@
 /**
- * Sponsor-AI — Content Script
+ * YouSkipAI — Content Script
  *
  * Injected into youtube.com pages. Monitors navigation, fetches sponsor
  * segments from the backend API, and skips them in real-time.
@@ -85,13 +85,13 @@
     try {
       const response = await fetch(`${apiUrl}/analyze/${videoId}`);
       if (!response.ok) {
-        console.warn(`[Sponsor-AI] API returned ${response.status} for ${videoId}`);
+        console.warn(`[YouSkipAI] API returned ${response.status} for ${videoId}`);
         return [];
       }
       const data = await response.json();
       return data.segments || [];
     } catch (error) {
-      console.warn(`[Sponsor-AI] API unreachable: ${error.message}`);
+      console.warn(`[YouSkipAI] API unreachable: ${error.message}`);
       return [];
     }
   }
@@ -114,10 +114,10 @@
       // Allow a small tolerance window (0.5s) to catch the segment entry
       if (currentTime >= seg.start && currentTime < seg.end - 0.5) {
         console.log(
-          `[Sponsor-AI] Skipping sponsor: ${seg.start.toFixed(1)}s → ${seg.end.toFixed(1)}s (confidence: ${seg.confidence})`
+          `[YouSkipAI] Skipping sponsor: ${seg.start.toFixed(1)}s → ${seg.end.toFixed(1)}s (confidence: ${seg.confidence})`
         );
         video.currentTime = seg.end;
-        showNotification("⚡ Sponsor sauté par Sponsor-AI");
+        showNotification("⚡ Sponsor skipped by YouSkipAI");
         break;
       }
     }
@@ -156,15 +156,15 @@
 
     if (!enabled) return;
 
-    console.log(`[Sponsor-AI] Analyzing video: ${videoId}`);
+    console.log(`[YouSkipAI] Analyzing video: ${videoId}`);
     segments = await fetchSegments(videoId);
 
     if (segments.length > 0) {
-      console.log(`[Sponsor-AI] Found ${segments.length} sponsor segment(s)`);
+      console.log(`[YouSkipAI] Found ${segments.length} sponsor segment(s)`);
       showNotification(`🔍 ${segments.length} sponsor(s) détecté(s)`, 4000);
       startSkipMonitor();
     } else {
-      console.log("[Sponsor-AI] No sponsor segments detected");
+      console.log("[YouSkipAI] No sponsor segments detected");
     }
   }
 
@@ -233,7 +233,7 @@
   function init() {
     loadSettings();
     checkForVideoChange();
-    console.log("[Sponsor-AI] Content script loaded");
+    console.log("[YouSkipAI] Content script loaded");
   }
 
   // Run when DOM is ready
