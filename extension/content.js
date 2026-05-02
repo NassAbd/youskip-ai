@@ -161,7 +161,7 @@
 
     if (segments.length > 0) {
       console.log(`[YouSkipAI] Found ${segments.length} sponsor segment(s)`);
-      showNotification(`🔍 ${segments.length} sponsor(s) détecté(s)`, 4000);
+      showNotification(`🔍 ${segments.length} sponsor(s) detected`, 4000);
       startSkipMonitor();
     } else {
       console.log("[YouSkipAI] No sponsor segments detected");
