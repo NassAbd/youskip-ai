@@ -1,53 +1,75 @@
-# 🚀 YouSkipAI (YSA)
+# ⚡ YouSkipAI (YSA)
 
-[![FastAPI](https://img.shields.io/badge/FastAPI-005571?style=for-the-badge&logo=fastapi)](https://fastapi.tiangolo.com/)
-[![Gemini](https://img.shields.io/badge/Gemini_2.5-4285F4?style=for-the-badge&logo=google)](https://aistudio.google.com/)
-[![Python](https://img.shields.io/badge/Python_3.11+-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
+> **High-precision, AI-powered YouTube sponsor detector and auto-skipper.**
 
-**YouSkipAI** is a high-precision YouTube sponsor detector. It combines local embeddings (SentenceTransformers) and advanced reasoning via **Google Gemini 2.5 Flash** to automatically skip sponsors, product placements, and self-promotions.
+YouSkipAI is a hybrid detection engine that eliminates sponsored segments from your YouTube experience. It combines **local semantic embeddings** for speed and **Gemini 2.5 Flash** for deep contextual reasoning, ensuring even the most subtle product placements are caught.
+
+---
+
+## 🛠 Tech Stack
+
+- **Backend**: FastAPI (Python 3.11+)
+- **Dependency Management**: [uv](https://docs.astral.sh/uv/)
+- **AI Engine**: 
+  - **Cloud (Primary)**: Google Gemini 2.5 Flash for high-precision contextual extraction.
+  - **Local (Fallback)**: `sentence-transformers` for offline-first semantic similarity if the LLM is disabled or the API is unreachable.
+- **Frontend**: Chrome Extension
 
 ---
 
 ## ✨ Key Features
-- **Hybrid Analysis**: Uses ultra-fast local embeddings for standard detection and LLM (Gemini) for complex cases.
-- **Smart Merging**: Automatically merges close segments for a smooth viewing experience.
-- **Micro-Precision**: Snaps skip points to actual transcript timestamps (no cutting mid-sentence).
-- **Gratifying Dashboard**: Keep track of exactly how much time you've saved from watching ads.
-- **Instant Toggle**: Enable or disable the extension in real-time without refreshing your page.
+
+- **Resilient Hybrid Architecture**: Automatically falls back to local embedding-based detection if the Gemini API is unavailable, ensuring 100% uptime.
+- **Micro-Timestamp Alignment**: Automatically snaps skip points to actual transcript sentence boundaries.
+- **Smart Segment Merging**: Group contiguous sponsor segments for a seamless viewing experience.
+- **Time-Saved Dashboard**: A real-time counter in the extension showing exactly how much of your life the AI has reclaimed.
+- **Bilingual Optimized**: Fine-tuned markers for both English and French content.
+- **Persistent Caching**: Locally stores analyzed segments to minimize API calls and latency.
 
 ---
 
-## 🛠 Installation
+## 🚀 Getting Started
 
-### 1. Backend (Python)
+### 1. Backend Setup
+
 Ensure you have `uv` installed.
 
 ```bash
-# Clone the repo
-git clone <repo-url>
+# Clone and install
+git clone https://github.com/NassAbd/youskip-ai.git
 cd sponso_detector
+uv sync
 
-# Setup environment
+# Configure environment
 cp .env.example .env
-# Edit .env and add your YSA_GOOGLE_API_KEY
+# Set your YSA_GOOGLE_API_KEY in .env
 
-# Run the server
+# Run server
 uv run uvicorn youskip_ai.main:app --reload
 ```
 
-### 2. Chrome Extension
-1. Open Chrome and go to `chrome://extensions/`.
+### 2. Chrome Extension Setup
+
+1. Open Chrome and navigate to `chrome://extensions/`.
 2. Enable **Developer mode** (top right).
-3. Click **Load unpacked** and select the `extension/` folder in this project.
-4. Click the extension icon to set your Backend URL (default: `http://localhost:8000`).
+3. Click **Load unpacked** and select the `extension/` folder.
+4. Open the extension popup to verify the **API Connected** status.
 
 ---
 
-## 📊 Monitoring
-- **Backend Stats**: Access `http://localhost:8000/stats` to see token consumption and cache metrics.
-- **Time Saved**: View your personal savings directly in the extension popup.
+## 📊 Monitoring & API
+
+### Stats Dashboard
+Access real-time Gemini API metrics (tokens, requests) and cache size:
+`GET http://localhost:8000/stats`
+
+### Health Check
+Verify backend availability:
+`GET http://localhost:8000/health`
 
 ---
 
-## ⚖️ License
-MIT - Created by Abdallah Nassur
+## 🛡 License
+This project is licensed under the **MIT License**. See the [LICENSE](LICENSE) file for details.
+
+Created with ❤️ by **Abdallah Nassur**

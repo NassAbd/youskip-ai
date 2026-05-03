@@ -1,7 +1,7 @@
 [project]
-name = "sponsor-ai"
+name = "youskip-ai"
 version = "0.1.0"
-description = "Détection et saut automatique de segments sponsorisés dans les vidéos YouTube via embeddings et similarité cosine."
+description = "AI-powered YouTube sponsor detection and skipping"
 readme = "README.md"
 authors = [
     { name = "Abdallah Nassur", email = "nassur1607@gmail.com" }
@@ -27,7 +27,7 @@ dev = [
 ]
 
 [build-system]
-requires = ["uv_build>=0.9.27,<0.10.0"]
+requires = ["uv-build>=0.11,<0.12"]
 build-backend = "uv_build"
 
 [tool.ruff]
