@@ -4,6 +4,8 @@
 
 YouSkipAI is a hybrid detection engine that eliminates sponsored segments from your YouTube experience. It combines **local semantic embeddings** for speed and **Gemini 2.5 Flash** for deep contextual reasoning, ensuring even the most subtle product placements are caught.
 
+https://github.com/user-attachments/assets/1e9cac4c-b25a-4aee-91cd-f871a62388c4
+
 ---
 
 ## 🛠 Tech Stack
