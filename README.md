@@ -37,7 +37,7 @@ Ensure you have `uv` installed.
 ```bash
 # Clone and install
 git clone https://github.com/NassAbd/youskip-ai.git
-cd sponso_detector
+cd youskip-ai
 uv sync
 
 # Configure environment
