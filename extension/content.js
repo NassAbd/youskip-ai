@@ -16,6 +16,9 @@
   let apiUrl = DEFAULT_API_URL;
   let skipTimerId = null;
   let notificationTimerId = null;
+  let totalSkips = 0;
+  let totalSecondsSaved = 0;
+
 
   // ── Helpers ────────────────────────────────────────────────────────
 
@@ -118,6 +121,19 @@
         );
         video.currentTime = seg.end;
         showNotification("⚡ Sponsor skipped by YouSkipAI");
+        
+        // Update stats - skip count and time saved
+        const segmentDuration = seg.end - seg.start;
+        totalSkips += 1;
+        totalSecondsSaved += Math.round(segmentDuration);
+        
+        // Persist to chrome.storage for the popup
+        if (typeof chrome !== 'undefined' && chrome.storage) {
+          chrome.storage.local.set({
+            totalSkips: totalSkips,
+            totalSecondsSaved: totalSecondsSaved
+          });
+        }
         break;
       }
     }
@@ -199,9 +215,11 @@
    */
   function loadSettings() {
     if (typeof chrome !== "undefined" && chrome.storage) {
-      chrome.storage.local.get(["enabled", "apiUrl"], (result) => {
+      chrome.storage.local.get(["enabled", "apiUrl", "totalSkips", "totalSecondsSaved"], (result) => {
         enabled = result.enabled !== false; // Default to true
         if (result.apiUrl) apiUrl = result.apiUrl;
+        totalSkips = result.totalSkips || 0;
+        totalSecondsSaved = result.totalSecondsSaved || 0;
         console.log(`[YouSkipAI] Settings loaded: enabled=${enabled}, apiUrl=${apiUrl}`);
       });
 
