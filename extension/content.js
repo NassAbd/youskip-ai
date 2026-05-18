@@ -133,17 +133,6 @@
             totalSkips: totalSkips,
             totalSecondsSaved: totalSecondsSaved
           });
-          
-          // Update all open YouTube tabs
-          chrome.tabs.query({ url: '*://*.youtube.com/*' }, (tabs) => {
-            tabs.forEach(tab => {
-              chrome.tabs.sendMessage(tab.id, { 
-                type: 'UPDATE_STATS', 
-                totalSkips, 
-                totalSecondsSaved 
-              });
-            });
-          });
         }
         break;
       }
@@ -226,9 +215,11 @@
    */
   function loadSettings() {
     if (typeof chrome !== "undefined" && chrome.storage) {
-      chrome.storage.local.get(["enabled", "apiUrl"], (result) => {
+      chrome.storage.local.get(["enabled", "apiUrl", "totalSkips", "totalSecondsSaved"], (result) => {
         enabled = result.enabled !== false; // Default to true
         if (result.apiUrl) apiUrl = result.apiUrl;
+        totalSkips = result.totalSkips || 0;
+        totalSecondsSaved = result.totalSecondsSaved || 0;
         console.log(`[YouSkipAI] Settings loaded: enabled=${enabled}, apiUrl=${apiUrl}`);
       });
 
