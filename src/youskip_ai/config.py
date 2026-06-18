@@ -30,6 +30,7 @@ class Settings(BaseSettings):
 
     # Mollie settings
     mollie_api_key: str | None = "mock"
+    base_url: str = "http://localhost:8000"
 
     reference_phrases: str = (
         # --- ENGLISH: AGGRESSIVE MARKETING MARKERS ---

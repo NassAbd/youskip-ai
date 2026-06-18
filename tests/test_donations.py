@@ -130,9 +130,17 @@ class TestDonationEndpoints:
         """Provide a clean manager with temp directory."""
         manager = DonationManager(cache_dir=str(tmp_path))
         manager._save_donations({})  # Reset seed values
-        # Monkeypatch main app's _donations instance
-        with patch("youskip_ai.main._donations", manager):
-            yield manager
+        
+        # Override settings to use mock Mollie key for hermetic tests
+        from youskip_ai.main import _settings
+        original_key = _settings.mollie_api_key
+        _settings.mollie_api_key = "mock"
+        
+        try:
+            with patch("youskip_ai.main._donations", manager):
+                yield manager
+        finally:
+            _settings.mollie_api_key = original_key
 
     def test_get_stats_empty(self, clean_manager: DonationManager) -> None:
         """Stats should return default zeros if no donations exist."""

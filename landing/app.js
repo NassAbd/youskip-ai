@@ -215,6 +215,36 @@ document.addEventListener("DOMContentLoaded", () => {
   // Initial load
   fetchStats();
 
+  // Handle redirection callback from Mollie payment page
+  const urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.get("payment") === "success") {
+    const savedPaymentId = localStorage.getItem("ysa_active_payment_id");
+    const savedAmount = localStorage.getItem("ysa_active_payment_amount");
+    if (savedPaymentId && savedAmount) {
+      addLog(`Redirected back from Mollie Checkout for session: ${savedPaymentId}`, "info");
+      addLog(`Simulating webhook registration for successful payment of €${parseFloat(savedAmount).toFixed(2)}...`, "info");
+      
+      // Trigger simulate-webhook endpoint locally to mock Mollie IPN callback
+      fetch(`/api/v1/donations/simulate-webhook/${savedPaymentId}`, {
+        method: "POST"
+      }).then(res => {
+        if (res.ok) {
+          addLog(`SUCCESS: Webhook registered payment of €${parseFloat(savedAmount).toFixed(2)} as PAID!`, "success");
+          localStorage.removeItem("ysa_active_payment_id");
+          localStorage.removeItem("ysa_active_payment_amount");
+          fetchStats();
+          
+          // Clear query params from the browser address bar
+          window.history.replaceState({}, document.title, window.location.pathname);
+        } else {
+          addLog("FAILED: Webhook simulation failed to register payment.", "error");
+        }
+      }).catch(err => {
+        addLog(`Webhook simulation error: ${err.message}`, "error");
+      });
+    }
+  }
+
   btnDonateTrigger.addEventListener("click", () => {
     donationModal.classList.remove("hidden");
   });
@@ -269,9 +299,13 @@ document.addEventListener("DOMContentLoaded", () => {
         mollieCheckoutOverlay.classList.remove("hidden");
         addLog("[Mollie Sandbox] Redirected to local simulated checkout interface.", "warn");
       } else {
-        // Real Mollie redirect (new window)
+        // Real Mollie redirect (same window to enable back redirection)
         addLog(`Redirecting to official checkout page: ${data.checkout_url}`, "success");
-        window.open(data.checkout_url, "_blank");
+        localStorage.setItem("ysa_active_payment_id", data.id);
+        localStorage.setItem("ysa_active_payment_amount", activeDonationAmount.toString());
+        setTimeout(() => {
+          window.location.href = data.checkout_url;
+        }, 1000);
       }
     } catch (err) {
       addLog(`Checkout failed: ${err.message}`, "error");

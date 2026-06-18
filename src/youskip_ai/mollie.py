@@ -60,11 +60,14 @@ class MollieClient:
             "description": "Support YouSkipAI Open-Source Development",
             # Success redirect point
             "redirectUrl": (
-                "http://localhost:8000/landing/index.html?payment=success"
+                f"{self.settings.base_url}/?payment=success"
             ),
-            # Standard webhook (in sandbox, Mollie calls this if it is a public URL)
-            "webhookUrl": "https://youskip.ai/api/v1/donations/webhook",
         }
+
+        # Mollie rejects non-public webhook URLs (e.g. containing localhost/127.0.0.1)
+        base_url_lower = self.settings.base_url.lower()
+        if "localhost" not in base_url_lower and "127.0.0.1" not in base_url_lower:
+            payload["webhookUrl"] = f"{self.settings.base_url}/api/v1/donations/webhook"
 
         async with httpx.AsyncClient() as client:
             try:
