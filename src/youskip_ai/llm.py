@@ -10,6 +10,7 @@ from typing import Any
 
 from google import genai
 from google.genai import types
+
 from youskip_ai.config import Settings
 from youskip_ai.schemas import SponsorSegment
 
@@ -23,7 +24,8 @@ METRICS = {
     "total_tokens": 0
 }
 
-SYSTEM_PROMPT = """You are an expert YouTube content analyst. Your task is to identify "Sponsor Segments" in video transcripts.
+SYSTEM_PROMPT = """You are an expert YouTube content analyst.
+Your task is to identify "Sponsor Segments" in video transcripts.
 
 A Sponsor Segment is:
 - A paid advertisement (e.g., VPNs, games, services).
@@ -34,7 +36,8 @@ Instructions:
 1. You will be given a transcript where each line starts with [START_TIME - END_TIME].
 2. Identify the exact start and end times for each sponsor segment.
 3. Be precise: include the entire pitch but exclude the actual content of the video.
-4. Output your answer ONLY as a JSON list of objects with "start", "end", "type", and "confidence" (0.0 to 1.0).
+4. Output your answer ONLY as a JSON list of objects with "start", "end",
+   "type", and "confidence" (0.0 to 1.0).
 5. If no sponsor is found, return an empty list: [].
 
 Example Output:
@@ -67,7 +70,10 @@ def detect_with_llm(
         # Generation call aligned with user's working script
         response = client.models.generate_content(
             model=settings.llm_model_name,
-            contents=f"Analyze this transcript and find sponsor segments:\n\n{formatted_transcript}",
+            contents=(
+                f"Analyze this transcript and find sponsor segments:\n\n"
+                f"{formatted_transcript}"
+            ),
             config=types.GenerateContentConfig(
                 system_instruction=SYSTEM_PROMPT,
                 response_mime_type="application/json",

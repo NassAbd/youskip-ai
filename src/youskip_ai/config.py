@@ -27,6 +27,10 @@ class Settings(BaseSettings):
     use_llm: bool = True
     google_api_key: str | None = None
     llm_model_name: str = "gemini-2.5-flash"
+
+    # Mollie settings
+    mollie_api_key: str | None = "mock"
+
     reference_phrases: str = (
         # --- ENGLISH: AGGRESSIVE MARKETING MARKERS ---
         "this video is sponsored by"

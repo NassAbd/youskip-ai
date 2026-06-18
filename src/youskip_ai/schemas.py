@@ -39,3 +39,34 @@ class ErrorResponse(BaseModel):
     """Standard error response."""
 
     detail: str = Field(..., description="Human-readable error message.")
+
+
+class CreateDonationRequest(BaseModel):
+    """Request to create a new donation/payment session."""
+
+    amount: float = Field(..., ge=1.00, description="Donation amount (minimum €1.00).")
+    currency: str = Field(default="EUR", description="Currency code, e.g. EUR.")
+
+
+class DonationResponse(BaseModel):
+    """Payload representing a single donation."""
+
+    id: str = Field(..., description="Mollie Payment ID or Mock ID.")
+    amount: float = Field(..., description="Donation amount.")
+    currency: str = Field(..., description="Currency code.")
+    status: str = Field(
+        ...,
+        description="Status of the payment (open, paid, failed, expired, cancelled)."
+    )
+    checkout_url: str | None = Field(None, description="Checkout redirect URL.")
+    created_at: str = Field(..., description="Timestamp of payment creation.")
+
+
+class DonationStatsResponse(BaseModel):
+    """Aggregation stats for the donation campaign."""
+
+    total_raised: float = Field(..., description="Total amount raised so far.")
+    target_goal: float = Field(..., description="Monthly campaign target goal.")
+    backers_count: int = Field(..., description="Number of unique backers.")
+    percent_raised: float = Field(..., description="Percentage of goal raised.")
+
