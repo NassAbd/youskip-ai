@@ -22,7 +22,13 @@
 }
 
 body {
-  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-family:
+    'Plus Jakarta Sans',
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    Roboto,
+    sans-serif;
   background-color: var(--bg-primary);
   color: var(--text-primary);
   line-height: 1.6;
@@ -338,7 +344,7 @@ body {
   color: var(--text-secondary);
 }
 
-/* Interactive Demo */
+/* Demo Video */
 .demo-section {
   padding: 100px 0;
 }
@@ -347,6 +353,16 @@ body {
   padding: 24px;
   max-width: 900px;
   margin: 0 auto;
+}
+
+.demo-video {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: 12px;
+  background: #000;
+  object-fit: cover;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.6);
 }
 
 .demo-controls {

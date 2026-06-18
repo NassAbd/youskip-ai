@@ -1,4 +1,4 @@
-/* ── Sponsor-AI Notification Overlay ──────────────────────────────── */
+/* ── YouSkipAI YouTube Overlays ───────────────────────────────────── */
 /* Injected into YouTube pages via content script.                    */
 
 #sponsor-ai-notification {
@@ -12,23 +12,20 @@
   padding: 10px 18px;
   border-radius: 8px;
 
-  /* Glassmorphism styling */
-  background: rgba(15, 15, 15, 0.85);
+  background: rgba(10, 12, 16, 0.88);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow:
     0 4px 24px rgba(0, 0, 0, 0.4),
-    0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+    0 0 0 1px rgba(255, 87, 34, 0.12) inset;
 
-  /* Typography */
-  font-family: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-family: "Plus Jakarta Sans", "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
   font-size: 13px;
-  font-weight: 500;
-  color: #e0e0e0;
-  letter-spacing: 0.01em;
+  font-weight: 700;
+  color: #f0f3f8;
+  letter-spacing: 0;
 
-  /* Animation */
   opacity: 0;
   transform: translateY(-8px);
   transition:
@@ -63,7 +60,9 @@
   border-radius: 999px;
   background: rgba(0, 0, 0, 0.42);
   border: 1px solid rgba(255, 255, 255, 0.18);
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.45);
+  box-shadow:
+    0 2px 10px rgba(0, 0, 0, 0.45),
+    0 0 0 1px rgba(255, 87, 34, 0.08) inset;
   overflow: hidden;
 }
 
@@ -74,8 +73,8 @@
   min-width: 3px;
   box-sizing: border-box;
   border-radius: 999px;
-  background: #1dd1a1;
-  box-shadow: 0 0 10px rgba(29, 209, 161, 0.7);
+  background: linear-gradient(90deg, #ff5722, #ff8a65);
+  box-shadow: 0 0 10px rgba(255, 87, 34, 0.72);
   pointer-events: none;
 }
 
@@ -88,15 +87,17 @@
   width: min(320px, calc(100% - 48px));
   max-width: 320px;
   box-sizing: border-box;
-  background: rgba(15, 15, 15, 0.95);
+  background: rgba(10, 12, 16, 0.94);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 12px;
+  border-radius: 8px;
   padding: 14px 16px;
-  color: #f1f1f1;
-  font-family: "Outfit", "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  color: #f0f3f8;
+  font-family: "Plus Jakarta Sans", "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.5),
+    0 0 0 1px rgba(255, 87, 34, 0.12) inset;
   z-index: 2147483645;
   opacity: 0;
   transform: translateY(20px);
@@ -130,6 +131,7 @@
   flex: 0 0 auto;
   font-size: 15px;
   line-height: 1;
+  color: #ff5722;
 }
 
 .youskip-banner-title {
@@ -138,7 +140,7 @@
   text-overflow: ellipsis;
   white-space: nowrap;
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 800;
   color: #ffffff;
 }
 
@@ -152,8 +154,9 @@
 .youskip-banner-countdown {
   white-space: nowrap;
   font-size: 11px;
-  color: #aaaaaa;
-  background: rgba(255, 255, 255, 0.1);
+  font-weight: 700;
+  color: #ffb199;
+  background: rgba(255, 87, 34, 0.13);
   padding: 2px 6px;
   border-radius: 4px;
 }
@@ -166,7 +169,7 @@
   height: 24px;
   background: none;
   border: none;
-  color: #aaaaaa;
+  color: #90a0b8;
   cursor: pointer;
   font-size: 14px;
   padding: 0 4px;
@@ -174,7 +177,7 @@
 }
 
 .youskip-banner-close:hover {
-  color: #ffffff;
+  color: #ff8a65;
 }
 
 .youskip-banner-actions {
@@ -188,9 +191,9 @@
   border: none;
   min-height: 34px;
   padding: 8px 12px;
-  border-radius: 6px;
+  border-radius: 8px;
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 800;
   cursor: pointer;
   transition:
     background 0.25s,
@@ -198,12 +201,13 @@
 }
 
 .youskip-banner-btn-unskip {
-  background: #ffffff;
-  color: #0f0f0f;
+  background: #ff5722;
+  color: #ffffff;
+  box-shadow: 0 4px 15px rgba(255, 87, 34, 0.34);
 }
 
 .youskip-banner-btn-unskip:hover {
-  background: #e5e5e5;
+  background: #f4511e;
 }
 
 .youskip-banner-btn-unskip:active {
@@ -211,9 +215,9 @@
 }
 
 .youskip-banner-btn-never {
-  background: rgba(255, 255, 255, 0.1);
-  color: #ffffff;
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.06);
+  color: #f0f3f8;
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .youskip-banner-btn-never:hover {

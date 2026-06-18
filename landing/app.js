@@ -45,15 +45,18 @@ document.addEventListener("DOMContentLoaded", () => {
   let lastSkipsCount = 4821;
 
   const carbonaraFrames = [
-    "url('https://images.unsplash.com/photo-1612874742237-6526221588e3?q=80&w=800')", // Cooking prep
-    "url('https://images.unsplash.com/photo-1546549032-9571cd6b27df?q=80&w=800')", // Sponsor placeholder
+    // Cooking prep
+    "url('https://images.unsplash.com/photo-1612874742237-6526221588e3?q=80&w=800')",
+    // Sponsor placeholder
+    "url('https://images.unsplash.com/photo-1546549032-9571cd6b27df?q=80&w=800')",
   ];
 
-  // Initialize Detector Demo
-  screenContent.style.backgroundImage = carbonaraFrames[0];
-  updateTimeDisplay();
-
   function addLog(text, type = "info") {
+    if (!terminalBody) {
+      console.log(`[YouSkipAI] ${text}`);
+      return;
+    }
+
     const line = document.createElement("div");
     line.className = `log-line ${type}`;
     line.textContent = `[${new Date().toLocaleTimeString()}] ${text}`;
@@ -68,6 +71,8 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function updateTimeDisplay() {
+    if (!currentTimeLbl || !durationLbl || !timelinePlayhead || !screenContent) return;
+
     currentTimeLbl.textContent = formatSeconds(currentTime);
     durationLbl.textContent = formatSeconds(VIDEO_DURATION);
     const percentage = (currentTime / VIDEO_DURATION) * 100;
@@ -76,15 +81,20 @@ document.addEventListener("DOMContentLoaded", () => {
     if (currentTime >= SPONSOR_START && currentTime < SPONSOR_END) {
       screenContent.style.backgroundImage = carbonaraFrames[1];
       document.getElementById("video-subtitle").textContent = "🔥 Try NordVPN today!";
-      document.getElementById("video-desc").textContent = "Keep your browsing private with 70% off.";
+      document.getElementById("video-desc").textContent =
+        "Keep your browsing private with 70% off.";
     } else {
       screenContent.style.backgroundImage = carbonaraFrames[0];
-      document.getElementById("video-subtitle").textContent = "Cooking the perfect Carbonara Pasta...";
-      document.getElementById("video-desc").textContent = "Now, add the eggs and whisk them with pecorino.";
+      document.getElementById("video-subtitle").textContent =
+        "Cooking the perfect Carbonara Pasta...";
+      document.getElementById("video-desc").textContent =
+        "Now, add the eggs and whisk them with pecorino.";
     }
   }
 
   function togglePlay() {
+    if (!btnPlayPause || !playOverlay) return;
+
     if (isPlaying) {
       pauseSimulation();
     } else {
@@ -93,6 +103,8 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function playSimulation() {
+    if (!btnPlayPause || !playOverlay) return;
+
     isPlaying = true;
     btnPlayPause.textContent = "⏸";
     playOverlay.style.opacity = 0;
@@ -116,6 +128,8 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function pauseSimulation() {
+    if (!btnPlayPause || !playOverlay) return;
+
     isPlaying = false;
     btnPlayPause.textContent = "▶";
     playOverlay.classList.remove("hidden");
@@ -127,6 +141,8 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function triggerSkipUI() {
+    if (!demoNotification || !heroSeconds || !heroSkips) return;
+
     demoNotification.classList.add("visible");
     setTimeout(() => {
       demoNotification.classList.remove("visible");
@@ -140,22 +156,31 @@ document.addEventListener("DOMContentLoaded", () => {
     heroSkips.textContent = lastSkipsCount.toLocaleString();
   }
 
-  btnSimulate.addEventListener("click", () => {
+  if (screenContent) {
+    screenContent.style.backgroundImage = carbonaraFrames[0];
+    updateTimeDisplay();
+  }
+
+  if (btnSimulate) btnSimulate.addEventListener("click", () => {
     pauseSimulation();
     currentTime = 0;
     updateTimeDisplay();
-    terminalBody.innerHTML = "";
+    if (terminalBody) terminalBody.innerHTML = "";
 
     addLog("Parsing YouTube URL...");
     setTimeout(() => {
       addLog(`Video ID detected: dQw4w9WgXcQ`);
       setTimeout(() => {
-        addLog("Querying Supabase cache for segments... (Miss)", "warn");
+        addLog("Checking local cache for sponsor segments... (Miss)", "warn");
         setTimeout(() => {
           addLog("Routing to FastAPI: Running Gemini 2.5 Flash Transcript Analysis...", "info");
           setTimeout(() => {
-            addLog("SUCCESS: Gemini identified sponsor segment: [36.0s - 81.0s] (confidence: 96.5%)", "success");
-            addLog("Saving video segments cache registration in database...", "info");
+            addLog(
+              "SUCCESS: Gemini identified sponsor segment: [36.0s - 81.0s] " +
+                "(confidence: 96.5%)",
+              "success"
+            );
+            addLog("Saving detected segments to the local cache...", "info");
             playSimulation();
           }, 1200);
         }, 800);
@@ -163,7 +188,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }, 400);
   });
 
-  playerTimeline.addEventListener("click", (e) => {
+  if (playerTimeline) playerTimeline.addEventListener("click", (e) => {
     const rect = playerTimeline.getBoundingClientRect();
     const clickX = e.clientX - rect.left;
     const width = rect.width;
@@ -174,7 +199,9 @@ document.addEventListener("DOMContentLoaded", () => {
     updateTimeDisplay();
   });
 
-  playerTimeline.addEventListener("mousemove", (e) => {
+  if (playerTimeline) playerTimeline.addEventListener("mousemove", (e) => {
+    if (!timeTooltip) return;
+
     const rect = playerTimeline.getBoundingClientRect();
     const hoverX = e.clientX - rect.left;
     const width = rect.width;
@@ -186,12 +213,13 @@ document.addEventListener("DOMContentLoaded", () => {
     timeTooltip.textContent = formatSeconds(hoverTime);
   });
 
-  playerTimeline.addEventListener("mouseleave", () => {
+  if (playerTimeline) playerTimeline.addEventListener("mouseleave", () => {
+    if (!timeTooltip) return;
     timeTooltip.style.display = "none";
   });
 
-  btnPlayPause.addEventListener("click", togglePlay);
-  playOverlay.addEventListener("click", playSimulation);
+  if (btnPlayPause) btnPlayPause.addEventListener("click", togglePlay);
+  if (playOverlay) playOverlay.addEventListener("click", playSimulation);
 
 
   // --- DONATIONS CAMPAIGN INTEGRATION ---
@@ -222,14 +250,22 @@ document.addEventListener("DOMContentLoaded", () => {
     const savedAmount = localStorage.getItem("ysa_active_payment_amount");
     if (savedPaymentId && savedAmount) {
       addLog(`Redirected back from Mollie Checkout for session: ${savedPaymentId}`, "info");
-      addLog(`Simulating webhook registration for successful payment of €${parseFloat(savedAmount).toFixed(2)}...`, "info");
+      addLog(
+        `Simulating webhook registration for successful payment of ` +
+          `€${parseFloat(savedAmount).toFixed(2)}...`,
+        "info"
+      );
       
       // Trigger simulate-webhook endpoint locally to mock Mollie IPN callback
       fetch(`/api/v1/donations/simulate-webhook/${savedPaymentId}`, {
         method: "POST"
       }).then(res => {
         if (res.ok) {
-          addLog(`SUCCESS: Webhook registered payment of €${parseFloat(savedAmount).toFixed(2)} as PAID!`, "success");
+          addLog(
+            `SUCCESS: Webhook registered payment of ` +
+              `€${parseFloat(savedAmount).toFixed(2)} as PAID!`,
+            "success"
+          );
           localStorage.removeItem("ysa_active_payment_id");
           localStorage.removeItem("ysa_active_payment_amount");
           fetchStats();
@@ -328,7 +364,12 @@ document.addEventListener("DOMContentLoaded", () => {
         });
 
         if (response.ok) {
-          addLog("SUCCESS: Webhook confirmed payment of €" + activeDonationAmount.toFixed(2) + " as PAID!", "success");
+          addLog(
+            "SUCCESS: Webhook confirmed payment of €" +
+              activeDonationAmount.toFixed(2) +
+              " as PAID!",
+            "success"
+          );
           fetchStats();
         } else {
           addLog("FAILED: Webhook simulation failed to register payment.", "error");
