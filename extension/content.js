@@ -21,6 +21,8 @@
   let skipDisabledUntil = 0;
   let bannerTimerId = null;
   let bannerCountdownIntervalId = null;
+  let videoRequestToken = 0;
+  let playerObserver = null;
 
   // ── Helpers ────────────────────────────────────
 
@@ -41,6 +43,121 @@
     return document.querySelector("video.html5-main-video") || document.querySelector("video");
   }
 
+  /**
+   * Get the YouTube player container used as the anchor for overlays.
+   * @returns {HTMLElement|null}
+   */
+  function getPlayerContainer() {
+    return document.querySelector("#movie_player") || document.querySelector(".html5-video-player");
+  }
+
+  /**
+   * Build a namespaced DOM element for extension UI.
+   * @param {string} tag - Tag name to create.
+   * @param {string|string[]} classNames - Class or classes to add.
+   * @param {string} text - Text content.
+   * @returns {HTMLElement}
+   */
+  function createElement(tag, classNames, text = "") {
+    const element = document.createElement(tag);
+    const classes = Array.isArray(classNames) ? classNames : [classNames];
+    classes.filter(Boolean).forEach((className) => element.classList.add(className));
+    if (text) element.textContent = text;
+    return element;
+  }
+
+  /**
+   * Keep only usable sponsor segments for the current video duration.
+   * @param {Array<{start: number, end: number, type?: string, confidence?: number}>} rawSegments
+   * @param {number} duration
+   * @returns {Array<{start: number, end: number, type: string, confidence: number}>}
+   */
+  function normalizeSegments(rawSegments, duration) {
+    const hasDuration = Number.isFinite(duration) && duration > 0;
+
+    return (Array.isArray(rawSegments) ? rawSegments : [])
+      .map((segment) => {
+        const start = Number(segment.start);
+        const end = Number(segment.end);
+        if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start) return null;
+
+        const normalizedStart = hasDuration
+          ? Math.max(0, Math.min(start, duration))
+          : Math.max(0, start);
+        const normalizedEnd = hasDuration
+          ? Math.max(0, Math.min(end, duration))
+          : Math.max(0, end);
+        if (normalizedEnd <= normalizedStart) return null;
+
+        return {
+          start: normalizedStart,
+          end: normalizedEnd,
+          type: segment.type || "sponsor",
+          confidence: Number.isFinite(Number(segment.confidence)) ? Number(segment.confidence) : 0,
+        };
+      })
+      .filter(Boolean)
+      .sort((a, b) => a.start - b.start);
+  }
+
+  /**
+   * Stop and clear banner timers.
+   */
+  function cleanupBannerTimers() {
+    if (bannerTimerId) {
+      clearTimeout(bannerTimerId);
+      bannerTimerId = null;
+    }
+    if (bannerCountdownIntervalId) {
+      clearInterval(bannerCountdownIntervalId);
+      bannerCountdownIntervalId = null;
+    }
+  }
+
+  /**
+   * Stop all extension timers.
+   */
+  function cleanupTimers() {
+    if (notificationTimerId) {
+      clearTimeout(notificationTimerId);
+      notificationTimerId = null;
+    }
+    cleanupBannerTimers();
+  }
+
+  /**
+   * Remove all injected UI and disconnect player observers.
+   */
+  function cleanupOverlays() {
+    document.getElementById("sponsor-ai-notification")?.remove();
+    document.getElementById("youskip-skip-banner")?.remove();
+    document.getElementById("youskip-mini-timeline")?.remove();
+
+    if (playerObserver) {
+      playerObserver.disconnect();
+      playerObserver = null;
+    }
+  }
+
+  /**
+   * Re-render timeline markers when YouTube rebuilds player controls.
+   */
+  function observePlayerControls() {
+    if (playerObserver || segments.length === 0) return;
+
+    const playerContainer = getPlayerContainer();
+    if (!playerContainer) return;
+
+    playerObserver = new MutationObserver(() => {
+      if (!enabled || segments.length === 0) return;
+      if (!document.getElementById("youskip-mini-timeline")) {
+        updateTimelineOverlay();
+      }
+    });
+
+    playerObserver.observe(playerContainer, { childList: true, subtree: true });
+  }
+
   // ── Notification Overlay ───────────────────────
 
   /**
@@ -59,8 +176,7 @@
     overlay.textContent = message;
 
     // Insert into the video player container for proper positioning
-    const playerContainer =
-      document.querySelector("#movie_player") || document.querySelector(".html5-video-player");
+    const playerContainer = getPlayerContainer();
     if (playerContainer) {
       playerContainer.style.position = "relative";
       playerContainer.appendChild(overlay);
@@ -72,6 +188,8 @@
     requestAnimationFrame(() => overlay.classList.add("sponsor-ai-visible"));
 
     notificationTimerId = setTimeout(() => {
+      notificationTimerId = null;
+      if (!overlay.isConnected) return;
       overlay.classList.remove("sponsor-ai-visible");
       overlay.addEventListener("transitionend", () => overlay.remove(), { once: true });
       // Fallback removal if transition doesn't fire
@@ -108,7 +226,7 @@
    */
   function ensureTimelineOverlay() {
     if (segments.length === 0) return;
-    const container = document.querySelector(".youskip-segments-container");
+    const container = document.getElementById("youskip-mini-timeline");
     if (!container) {
       updateTimelineOverlay();
     }
@@ -119,33 +237,46 @@
    */
   function updateTimelineOverlay() {
     const video = getVideoElement();
-    if (!video || !video.duration || segments.length === 0) return;
+    if (
+      !video ||
+      !Number.isFinite(video.duration) ||
+      video.duration <= 0 ||
+      segments.length === 0
+    ) {
+      return;
+    }
 
-    const progressBar =
-      document.querySelector("#movie_player .ytp-progress-list") ||
-      document.querySelector(".ytp-progress-list") ||
-      document.querySelector(".ytp-progress-bar");
-    if (!progressBar) return;
+    const playerContainer = getPlayerContainer();
+    if (!playerContainer) return;
 
-    let container = progressBar.querySelector(".youskip-segments-container");
+    playerContainer.style.position = "relative";
+
+    let container = document.getElementById("youskip-mini-timeline");
     if (!container) {
       container = document.createElement("div");
-      container.className = "youskip-segments-container";
-      progressBar.appendChild(container);
+      container.id = "youskip-mini-timeline";
+      container.setAttribute("aria-label", "Detected sponsor segments");
+      playerContainer.appendChild(container);
     } else {
       container.innerHTML = "";
     }
 
-    segments.forEach((seg) => {
+    const track = createElement("div", "youskip-mini-timeline-track");
+    container.appendChild(track);
+
+    const renderableSegments = normalizeSegments(segments, video.duration);
+    renderableSegments.forEach((seg) => {
       const startPct = (seg.start / video.duration) * 100;
       const endPct = (seg.end / video.duration) * 100;
       const widthPct = endPct - startPct;
+      if (widthPct <= 0) return;
 
       const segmentDiv = document.createElement("div");
-      segmentDiv.className = "youskip-timeline-segment";
+      segmentDiv.className = "youskip-mini-timeline-segment";
       segmentDiv.style.left = `${startPct}%`;
       segmentDiv.style.width = `${widthPct}%`;
-      container.appendChild(segmentDiv);
+      segmentDiv.title = `Sponsor ${seg.start.toFixed(1)}s - ${seg.end.toFixed(1)}s`;
+      track.appendChild(segmentDiv);
     });
   }
 
@@ -156,38 +287,44 @@
   function showSkipBanner(seg) {
     const existing = document.getElementById("youskip-skip-banner");
     if (existing) existing.remove();
-    if (bannerTimerId) clearTimeout(bannerTimerId);
-    if (bannerCountdownIntervalId) clearInterval(bannerCountdownIntervalId);
+    cleanupBannerTimers();
 
     const banner = document.createElement("div");
     banner.id = "youskip-skip-banner";
 
     let secondsLeft = 7;
 
-    banner.innerHTML = `
-      <div class="youskip-banner-header">
-        <div class="youskip-banner-title-wrapper">
-          <span style="font-size: 15px;">⚡</span>
-          <span class="youskip-banner-title">Sponsor Skipped</span>
-        </div>
-        <div class="youskip-banner-meta">
-          <span id="youskip-countdown" class="youskip-banner-countdown">
-            closes in ${secondsLeft}s
-          </span>
-          <button id="youskip-close-btn" class="youskip-banner-close">✕</button>
-        </div>
-      </div>
-      <div class="youskip-banner-actions">
-        <button id="youskip-unskip-btn" class="youskip-banner-btn youskip-banner-btn-unskip">
-          Unskip
-        </button>
-      </div>
-    `;
+    const header = createElement("div", "youskip-banner-header");
+    const titleWrapper = createElement("div", "youskip-banner-title-wrapper");
+    const icon = createElement("span", "youskip-banner-icon", "⚡");
+    const title = createElement("span", "youskip-banner-title", "Sponsor Skipped");
+    titleWrapper.append(icon, title);
 
-    const playerContainer =
-      document.querySelector("#movie_player") ||
-      document.querySelector(".html5-video-player");
+    const meta = createElement("div", "youskip-banner-meta");
+    const countdownSpan = createElement(
+      "span",
+      "youskip-banner-countdown",
+      `closes in ${secondsLeft}s`
+    );
+    const closeBtn = createElement("button", "youskip-banner-close", "✕");
+    closeBtn.type = "button";
+    closeBtn.setAttribute("aria-label", "Close");
+    meta.append(countdownSpan, closeBtn);
+    header.append(titleWrapper, meta);
+
+    const actions = createElement("div", "youskip-banner-actions");
+    const unskipBtn = createElement(
+      "button",
+      ["youskip-banner-btn", "youskip-banner-btn-unskip"],
+      "Unskip"
+    );
+    unskipBtn.type = "button";
+    actions.appendChild(unskipBtn);
+    banner.append(header, actions);
+
+    const playerContainer = getPlayerContainer();
     if (playerContainer) {
+      playerContainer.style.position = "relative";
       playerContainer.appendChild(banner);
     } else {
       document.body.appendChild(banner);
@@ -195,7 +332,6 @@
 
     requestAnimationFrame(() => banner.classList.add("youskip-banner-visible"));
 
-    const unskipBtn = banner.querySelector("#youskip-unskip-btn");
     unskipBtn.addEventListener("click", () => {
       const video = getVideoElement();
       if (video) {
@@ -211,31 +347,31 @@
       dismissBanner();
     });
 
-    const closeBtn = banner.querySelector("#youskip-close-btn");
     closeBtn.addEventListener("click", () => {
       dismissBanner();
     });
 
     function dismissBanner() {
-      if (bannerCountdownIntervalId) clearInterval(bannerCountdownIntervalId);
-      if (bannerTimerId) clearTimeout(bannerTimerId);
-      
+      cleanupBannerTimers();
+      if (!banner.isConnected) return;
+
       banner.classList.remove("youskip-banner-visible");
       banner.addEventListener("transitionend", () => banner.remove(), { once: true });
       setTimeout(() => banner.remove(), 400);
     }
 
-    const countdownSpan = banner.querySelector("#youskip-countdown");
     bannerCountdownIntervalId = setInterval(() => {
       secondsLeft -= 1;
       if (secondsLeft <= 0) {
         clearInterval(bannerCountdownIntervalId);
+        bannerCountdownIntervalId = null;
       } else {
         countdownSpan.textContent = `closes in ${secondsLeft}s`;
       }
     }, 1000);
 
     bannerTimerId = setTimeout(() => {
+      bannerTimerId = null;
       dismissBanner();
     }, secondsLeft * 1000);
   }
@@ -310,22 +446,27 @@
    */
   async function onVideoChange(videoId) {
     if (videoId === currentVideoId) return;
+    const requestToken = ++videoRequestToken;
     currentVideoId = videoId;
     segments = [];
     stopSkipMonitor();
 
     // Clean up existing overlay and timer bypass
-    document.querySelectorAll(".youskip-segments-container").forEach(el => el.remove());
-    const banner = document.getElementById("youskip-skip-banner");
-    if (banner) banner.remove();
-    if (bannerTimerId) clearTimeout(bannerTimerId);
-    if (bannerCountdownIntervalId) clearInterval(bannerCountdownIntervalId);
+    cleanupTimers();
+    cleanupOverlays();
     skipDisabledUntil = 0;
 
     if (!enabled) return;
 
     console.log(`[YouSkipAI] Analyzing video: ${videoId}`);
-    segments = await fetchSegments(videoId);
+    const fetchedSegments = await fetchSegments(videoId);
+    if (requestToken !== videoRequestToken || videoId !== currentVideoId || !enabled) {
+      console.log(`[YouSkipAI] Ignoring stale analysis result for: ${videoId}`);
+      return;
+    }
+
+    const video = getVideoElement();
+    segments = normalizeSegments(fetchedSegments, video?.duration);
 
     if (segments.length > 0) {
       console.log(`[YouSkipAI] Found ${segments.length} sponsor segment(s)`);
@@ -333,14 +474,22 @@
       startSkipMonitor();
 
       // Attempt immediate render if duration is ready
-      const video = getVideoElement();
       if (video) {
         video.addEventListener("durationchange", updateTimelineOverlay, { once: true });
-        video.addEventListener("loadedmetadata", updateTimelineOverlay, { once: true });
+        video.addEventListener(
+          "loadedmetadata",
+          () => {
+            segments = normalizeSegments(segments, video.duration);
+            updateTimelineOverlay();
+          },
+          { once: true }
+        );
         if (video.duration) {
+          segments = normalizeSegments(segments, video.duration);
           updateTimelineOverlay();
         }
       }
+      observePlayerControls();
     } else {
       console.log("[YouSkipAI] No sponsor segments detected");
     }
@@ -348,14 +497,24 @@
 
   // ── Navigation Observer ────────────────────────
   // YouTube is a SPA — standard page loads don't fire on navigation.
-  // We use a MutationObserver on the <title> as a reliable proxy for
-  // navigation events, combined with the yt-navigate-finish event.
+  // We combine YouTube's navigation event with popstate and polling.
 
   /**
    * Poll-check the current URL for a video ID change.
    */
   function checkForVideoChange() {
     const videoId = getVideoId();
+    if (!videoId && currentVideoId) {
+      videoRequestToken += 1;
+      currentVideoId = null;
+      segments = [];
+      stopSkipMonitor();
+      cleanupTimers();
+      cleanupOverlays();
+      skipDisabledUntil = 0;
+      return;
+    }
+
     if (videoId && videoId !== currentVideoId) {
       onVideoChange(videoId);
     }
@@ -375,7 +534,7 @@
   /**
    * Load saved settings from chrome.storage.
    */
-  function loadSettings() {
+  function loadSettings(onReady = () => {}) {
     if (typeof chrome !== "undefined" && chrome.storage) {
       chrome.storage.local.get(
         ["enabled", "apiUrl", "totalSkips", "totalSecondsSaved"],
@@ -385,6 +544,7 @@
           totalSkips = result.totalSkips || 0;
           totalSecondsSaved = result.totalSecondsSaved || 0;
           console.log(`[YouSkipAI] Settings loaded: enabled=${enabled}, apiUrl=${apiUrl}`);
+          onReady();
         }
       );
 
@@ -404,9 +564,8 @@
           } else {
             stopSkipMonitor();
             segments = [];
-            document.querySelectorAll(".youskip-segments-container").forEach(el => el.remove());
-            const banner = document.getElementById("youskip-skip-banner");
-            if (banner) banner.remove();
+            cleanupTimers();
+            cleanupOverlays();
           }
         }
         if (changes.apiUrl) {
@@ -419,14 +578,15 @@
           }
         }
       });
+    } else {
+      onReady();
     }
   }
 
   // ── Init ───────────────────────────────────────
 
   function init() {
-    loadSettings();
-    checkForVideoChange();
+    loadSettings(checkForVideoChange);
     console.log("[YouSkipAI] Content script loaded");
   }
 
