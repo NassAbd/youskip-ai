@@ -745,6 +745,11 @@ body {
   color: var(--text-primary);
 }
 
+.raised.value-updated,
+.donors-count.value-updated {
+  animation: valuePulse 0.9s ease;
+}
+
 .target {
   color: var(--text-secondary);
 }
@@ -762,6 +767,10 @@ body {
   background: linear-gradient(90deg, #ff5722, #ff8a65);
   border-radius: 5px;
   transition: width 0.5s ease-out;
+}
+
+.main-progress-fill.value-updated {
+  animation: progressGlow 1s ease;
 }
 
 .donors-list {
@@ -986,8 +995,94 @@ body {
   transform: translateY(-1px);
 }
 
+.btn-checkout-action.is-loading,
+.btn-checkout-action:disabled {
+  cursor: wait;
+  opacity: 0.82;
+  transform: none;
+}
+
 .mollie-icon {
   font-size: 20px;
+}
+
+.checkout-loading-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 260;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(4, 5, 8, 0.86);
+  backdrop-filter: blur(10px);
+  opacity: 1;
+  transition: opacity 0.2s ease;
+}
+
+.checkout-loading-overlay.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.checkout-loading-card {
+  width: min(360px, calc(100vw - 40px));
+  padding: 32px;
+  text-align: center;
+}
+
+.checkout-spinner {
+  width: 46px;
+  height: 46px;
+  margin: 0 auto 18px;
+  border: 3px solid rgba(255, 255, 255, 0.14);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  box-shadow: 0 0 18px var(--accent-glow);
+  animation: checkoutSpin 0.85s linear infinite;
+}
+
+.checkout-loading-card h3 {
+  font-size: 22px;
+  font-weight: 800;
+  margin-bottom: 8px;
+}
+
+.checkout-loading-card p {
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+@keyframes checkoutSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes valuePulse {
+  0% {
+    color: var(--text-primary);
+    text-shadow: none;
+  }
+
+  35% {
+    color: var(--accent);
+    text-shadow: 0 0 18px var(--accent-glow);
+  }
+
+  100% {
+    color: inherit;
+    text-shadow: none;
+  }
+}
+
+@keyframes progressGlow {
+  0%, 100% {
+    box-shadow: none;
+  }
+
+  45% {
+    box-shadow: 0 0 18px var(--accent-glow);
+  }
 }
 
 /* Mollie Checkout Sandbox Overlay */

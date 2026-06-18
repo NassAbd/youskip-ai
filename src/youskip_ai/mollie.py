@@ -39,6 +39,7 @@ class MollieClient:
             # Client handles mock payment overlay if redirected to this URL
             checkout_url = (
                 f"/landing/index.html?mock_payment_id={payment_id}&amount={amount:.2f}"
+                "#donation"
             )
             logger.info(f"[Mollie Mock] Created payment session: {payment_id} for €{amount:.2f}")
             return {
@@ -57,10 +58,10 @@ class MollieClient:
                 "currency": currency,
                 "value": f"{amount:.2f}",
             },
-            "description": "Support YouSkipAI Open-Source Development",
+            "description": "Support YouSkipAI Development",
             # Success redirect point
             "redirectUrl": (
-                f"{self.settings.base_url}/?payment=success"
+                f"{self.settings.base_url}/?payment=success#donation"
             ),
         }
 
@@ -101,7 +102,7 @@ class MollieClient:
                     "id": fallback_id,
                     "checkout_url": (
                         f"/landing/index.html?mock_payment_id={fallback_id}"
-                        f"&amount={amount:.2f}"
+                        f"&amount={amount:.2f}#donation"
                     ),
                 }
 

@@ -26,6 +26,9 @@ document.addEventListener("DOMContentLoaded", () => {
   const presetBtns = document.querySelectorAll(".preset-btn");
   const customAmountInput = document.getElementById("custom-amount");
   const btnMollieCheckout = document.getElementById("btn-mollie-checkout");
+  const checkoutLoadingOverlay = document.getElementById("checkout-loading-overlay");
+  const checkoutLabel = btnMollieCheckout?.querySelector(".checkout-label");
+  const donationSection = document.getElementById("donation");
 
   // --- MOLLIE SANDBOX OVERLAY ELEMENTS ---
   const mollieCheckoutOverlay = document.getElementById("mollie-checkout-overlay");
@@ -226,14 +229,118 @@ document.addEventListener("DOMContentLoaded", () => {
   let activeDonationAmount = 5.00;
   let activePaymentId = null;
 
-  async function fetchStats() {
+  function parseMoneyValue(text) {
+    const match = String(text || "").match(/[\d,.]+/);
+    return match ? Number(match[0].replace(",", ".")) : 0;
+  }
+
+  function parseIntegerValue(text) {
+    const match = String(text || "").match(/\d+/);
+    return match ? Number(match[0]) : 0;
+  }
+
+  function animateNumber({ from, to, duration = 900, onUpdate, onComplete }) {
+    const start = performance.now();
+    const delta = to - from;
+
+    function tick(now) {
+      const elapsed = Math.min((now - start) / duration, 1);
+      const eased = 1 - Math.pow(1 - elapsed, 3);
+      onUpdate(from + delta * eased);
+
+      if (elapsed < 1) {
+        requestAnimationFrame(tick);
+      } else if (onComplete) {
+        onComplete();
+      }
+    }
+
+    requestAnimationFrame(tick);
+  }
+
+  function pulseElement(element) {
+    if (!element) return;
+    element.classList.remove("value-updated");
+    void element.offsetWidth;
+    element.classList.add("value-updated");
+  }
+
+  function scrollToSupport() {
+    if (!donationSection) return;
+    donationSection.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  function showCheckoutLoading() {
+    if (checkoutLoadingOverlay) {
+      checkoutLoadingOverlay.classList.remove("hidden");
+    }
+    if (btnMollieCheckout) {
+      btnMollieCheckout.disabled = true;
+      btnMollieCheckout.classList.add("is-loading");
+    }
+    if (checkoutLabel) {
+      checkoutLabel.textContent = "Preparing checkout...";
+    }
+  }
+
+  function hideCheckoutLoading() {
+    if (checkoutLoadingOverlay) {
+      checkoutLoadingOverlay.classList.add("hidden");
+    }
+    if (btnMollieCheckout) {
+      btnMollieCheckout.disabled = false;
+      btnMollieCheckout.classList.remove("is-loading");
+    }
+    if (checkoutLabel) {
+      checkoutLabel.textContent = "Pay with Mollie";
+    }
+  }
+
+  async function fetchStats({ animate = false } = {}) {
     try {
       const response = await fetch("/api/v1/donations/stats");
       if (response.ok) {
         const stats = await response.json();
-        totalRaisedLbl.textContent = `€${stats.total_raised.toFixed(2)} raised`;
-        backersCountLbl.textContent = `❤️ Supported by ${stats.backers_count} awesome backers`;
-        progressBarFill.style.width = `${Math.min(stats.percent_raised, 100)}%`;
+        const nextRaised = Number(stats.total_raised) || 0;
+        const nextBackers = Number(stats.backers_count) || 0;
+        const nextPercent = Math.min(stats.percent_raised, 100);
+
+        if (animate) {
+          const currentRaised = parseMoneyValue(totalRaisedLbl.textContent);
+          const currentBackers = parseIntegerValue(backersCountLbl.textContent);
+
+          animateNumber({
+            from: currentRaised,
+            to: nextRaised,
+            onUpdate: (value) => {
+              totalRaisedLbl.textContent = `€${value.toFixed(2)} raised`;
+            },
+            onComplete: () => {
+              totalRaisedLbl.textContent = `€${nextRaised.toFixed(2)} raised`;
+              pulseElement(totalRaisedLbl);
+            },
+          });
+
+          animateNumber({
+            from: currentBackers,
+            to: nextBackers,
+            onUpdate: (value) => {
+              const rounded = Math.round(value);
+              backersCountLbl.textContent = `❤️ Supported by ${rounded} awesome backers`;
+            },
+            onComplete: () => {
+              backersCountLbl.textContent = `❤️ Supported by ${nextBackers} awesome backers`;
+              pulseElement(backersCountLbl);
+            },
+          });
+
+          pulseElement(progressBarFill);
+        } else {
+          totalRaisedLbl.textContent = `€${nextRaised.toFixed(2)} raised`;
+          backersCountLbl.textContent = `❤️ Supported by ${nextBackers} awesome backers`;
+        }
+
+        progressBarFill.style.width = `${nextPercent}%`;
       }
     } catch (err) {
       console.error("Failed to load donation stats", err);
@@ -246,6 +353,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // Handle redirection callback from Mollie payment page
   const urlParams = new URLSearchParams(window.location.search);
   if (urlParams.get("payment") === "success") {
+    scrollToSupport();
     const savedPaymentId = localStorage.getItem("ysa_active_payment_id");
     const savedAmount = localStorage.getItem("ysa_active_payment_amount");
     if (savedPaymentId && savedAmount) {
@@ -268,10 +376,10 @@ document.addEventListener("DOMContentLoaded", () => {
           );
           localStorage.removeItem("ysa_active_payment_id");
           localStorage.removeItem("ysa_active_payment_amount");
-          fetchStats();
+          fetchStats({ animate: true });
           
           // Clear query params from the browser address bar
-          window.history.replaceState({}, document.title, window.location.pathname);
+          window.history.replaceState({}, document.title, `${window.location.pathname}#donation`);
         } else {
           addLog("FAILED: Webhook simulation failed to register payment.", "error");
         }
@@ -312,6 +420,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     addLog(`Initiating payment session for €${activeDonationAmount.toFixed(2)}...`);
     donationModal.classList.add("hidden");
+    showCheckoutLoading();
 
     try {
       const response = await fetch("/api/v1/donations", {
@@ -331,9 +440,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
       if (data.checkout_url.startsWith("/landing") || data.checkout_url.startsWith("landing")) {
         // Mock Sandbox Checkout Overlay
-        molliePaymentAmount.textContent = `€${activeDonationAmount.toFixed(2)}`;
-        mollieCheckoutOverlay.classList.remove("hidden");
-        addLog("[Mollie Sandbox] Redirected to local simulated checkout interface.", "warn");
+        setTimeout(() => {
+          hideCheckoutLoading();
+          molliePaymentAmount.textContent = `€${activeDonationAmount.toFixed(2)}`;
+          mollieCheckoutOverlay.classList.remove("hidden");
+          addLog("[Mollie Sandbox] Redirected to local simulated checkout interface.", "warn");
+        }, 650);
       } else {
         // Real Mollie redirect (same window to enable back redirection)
         addLog(`Redirecting to official checkout page: ${data.checkout_url}`, "success");
@@ -344,6 +456,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }, 1000);
       }
     } catch (err) {
+      hideCheckoutLoading();
       addLog(`Checkout failed: ${err.message}`, "error");
       alert("Could not establish checkout session. Check FastAPI server log.");
     }
@@ -370,7 +483,8 @@ document.addEventListener("DOMContentLoaded", () => {
               " as PAID!",
             "success"
           );
-          fetchStats();
+          scrollToSupport();
+          fetchStats({ animate: true });
         } else {
           addLog("FAILED: Webhook simulation failed to register payment.", "error");
         }

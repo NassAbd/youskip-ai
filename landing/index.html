@@ -263,9 +263,19 @@
         </div>
 
         <button id="btn-mollie-checkout" class="btn-checkout-action">
-          <span class="mollie-icon">🏴</span> Pay with Mollie
+          <span class="mollie-icon">🏴</span>
+          <span class="checkout-label">Pay with Mollie</span>
         </button>
       </div>
+    </div>
+  </div>
+
+  <!-- Redirect Loading Overlay -->
+  <div id="checkout-loading-overlay" class="checkout-loading-overlay hidden">
+    <div class="checkout-loading-card glass-card">
+      <div class="checkout-spinner" aria-hidden="true"></div>
+      <h3>Preparing Mollie checkout</h3>
+      <p>Creating a secure payment session...</p>
     </div>
   </div>
 
