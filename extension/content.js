@@ -130,6 +130,7 @@
    */
   function cleanupOverlays() {
     document.getElementById("sponsor-ai-notification")?.remove();
+    document.getElementById("youskip-analysis-status")?.remove();
     document.getElementById("youskip-skip-banner")?.remove();
     document.getElementById("youskip-mini-timeline")?.remove();
 
@@ -156,6 +157,51 @@
     });
 
     playerObserver.observe(playerContainer, { childList: true, subtree: true });
+  }
+
+  /**
+   * Show a compact loading state while the backend analyzes the current video.
+   */
+  function showAnalysisStatus() {
+    document.getElementById("youskip-analysis-status")?.remove();
+
+    const status = document.createElement("div");
+    status.id = "youskip-analysis-status";
+
+    const spinner = createElement("span", "youskip-analysis-spinner");
+    spinner.setAttribute("aria-hidden", "true");
+
+    const content = createElement("div", "youskip-analysis-copy");
+    const title = createElement("span", "youskip-analysis-title", "Scanning video");
+    const detail = createElement(
+      "span",
+      "youskip-analysis-detail",
+      "Looking for sponsor segments..."
+    );
+    content.append(title, detail);
+    status.append(spinner, content);
+
+    const playerContainer = getPlayerContainer();
+    if (playerContainer) {
+      playerContainer.style.position = "relative";
+      playerContainer.appendChild(status);
+    } else {
+      document.body.appendChild(status);
+    }
+
+    requestAnimationFrame(() => status.classList.add("youskip-analysis-visible"));
+  }
+
+  /**
+   * Hide the analysis loading state.
+   */
+  function hideAnalysisStatus() {
+    const status = document.getElementById("youskip-analysis-status");
+    if (!status) return;
+
+    status.classList.remove("youskip-analysis-visible");
+    status.addEventListener("transitionend", () => status.remove(), { once: true });
+    setTimeout(() => status.remove(), 400);
   }
 
   // ── Notification Overlay ───────────────────────
@@ -459,11 +505,14 @@
     if (!enabled) return;
 
     console.log(`[YouSkipAI] Analyzing video: ${videoId}`);
+    showAnalysisStatus();
     const fetchedSegments = await fetchSegments(videoId);
     if (requestToken !== videoRequestToken || videoId !== currentVideoId || !enabled) {
       console.log(`[YouSkipAI] Ignoring stale analysis result for: ${videoId}`);
       return;
     }
+
+    hideAnalysisStatus();
 
     const video = getVideoElement();
     segments = normalizeSegments(fetchedSegments, video?.duration);
@@ -492,6 +541,7 @@
       observePlayerControls();
     } else {
       console.log("[YouSkipAI] No sponsor segments detected");
+      showNotification("No sponsor detected", 3000);
     }
   }
 
