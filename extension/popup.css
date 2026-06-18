@@ -54,13 +54,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
   margin-bottom: 5px;
-}
-
-.logo-icon {
-  border-radius: 8px;
-  box-shadow: 0 6px 18px rgba(255, 87, 34, 0.22);
 }
 
 .popup-header h1 {
