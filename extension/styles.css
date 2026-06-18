@@ -40,3 +40,144 @@
   opacity: 1;
   transform: translateY(0);
 }
+
+.youskip-segments-container {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.youskip-timeline-segment {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  background-color: #1dd1a1; /* SponsorBlock Green */
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+/* ── YouSkipAI Interactive Skip Banner ─────────────────────────────── */
+
+#youskip-skip-banner {
+  position: absolute;
+  bottom: 80px;
+  right: 24px;
+  width: 320px;
+  background: rgba(15, 15, 15, 0.95);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 14px 16px;
+  color: #f1f1f1;
+  font-family: "Outfit", "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  z-index: 2200;
+  opacity: 0;
+  transform: translateY(20px);
+  transition:
+    opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: auto;
+}
+
+#youskip-skip-banner.youskip-banner-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.youskip-banner-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.youskip-banner-title-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.youskip-banner-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.youskip-banner-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.youskip-banner-countdown {
+  font-size: 11px;
+  color: #aaaaaa;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.youskip-banner-close {
+  background: none;
+  border: none;
+  color: #aaaaaa;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 0 4px;
+  transition: color 0.2s;
+}
+
+.youskip-banner-close:hover {
+  color: #ffffff;
+}
+
+.youskip-banner-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.youskip-banner-btn {
+  flex: 1;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background 0.25s,
+    transform 0.1s;
+}
+
+.youskip-banner-btn-unskip {
+  background: #ffffff;
+  color: #0f0f0f;
+}
+
+.youskip-banner-btn-unskip:hover {
+  background: #e5e5e5;
+}
+
+.youskip-banner-btn-unskip:active {
+  transform: scale(0.97);
+}
+
+.youskip-banner-btn-never {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.youskip-banner-btn-never:hover {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.youskip-banner-btn-never:active {
+  transform: scale(0.97);
+}
