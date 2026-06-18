@@ -1,77 +1,154 @@
-# ⚡ YouSkipAI (YSA)
+# YouSkipAI (YSA)
 
-> **High-precision, AI-powered YouTube sponsor detector and auto-skipper.**
+> AI-powered YouTube sponsor detection and auto-skipping.
 
-YouSkipAI is a hybrid detection engine that eliminates sponsored segments from your YouTube experience. It combines **local semantic embeddings** for speed and **Gemini 2.5 Flash** for deep contextual reasoning, ensuring even the most subtle product placements are caught.
+YouSkipAI detects sponsored segments in YouTube videos from transcript data, then lets the Chrome extension skip those moments automatically. The backend combines Gemini 2.5 Flash with a local semantic fallback, while the extension displays analysis status, sponsor markers, skip notifications, and saved-time stats directly in the browser.
 
-https://github.com/user-attachments/assets/1e9cac4c-b25a-4aee-91cd-f871a62388c4
+https://github.com/NassAbd/youskip-ai/blob/hackathon/landing/demo.mp4
 
 ---
 
-## 🛠 Tech Stack
+## Hackathon Branch
 
-- **Backend**: FastAPI (Python 3.11+)
+The `hackathon` branch was dedicated to pursuing the project beyond the initial prototype. It adds a polished landing page, the donation flow, improved extension styling, a custom in-player sponsor timeline, loading states while analysis runs, and a fresh demo video.
+
+---
+
+## Tech Stack
+
+- **Backend**: FastAPI, Python 3.11+
 - **Dependency Management**: [uv](https://docs.astral.sh/uv/)
-- **AI Engine**: 
-  - **Cloud (Primary)**: Google Gemini 2.5 Flash for high-precision contextual extraction.
-  - **Local (Fallback)**: `sentence-transformers` for offline-first semantic similarity if the LLM is disabled or the API is unreachable.
-- **Frontend**: Chrome Extension
+- **AI Engine**:
+  - **Cloud**: Gemini 2.5 Flash for contextual sponsor detection
+  - **Local fallback**: `sentence-transformers` for offline-first semantic matching
+- **Browser Extension**: Chrome Manifest V3 content script and popup
+- **Landing Page**: Static HTML, CSS, and JavaScript served by FastAPI
+- **Payments**: Mollie checkout integration with local mock mode for development
 
 ---
 
-## ✨ Key Features
+## Implemented Features
 
-- **Resilient Hybrid Architecture**: Automatically falls back to local embedding-based detection if the Gemini API is unavailable, ensuring 100% uptime.
-- **Micro-Timestamp Alignment**: Automatically snaps skip points to actual transcript sentence boundaries.
-- **Smart Segment Merging**: Group contiguous sponsor segments for a seamless viewing experience.
-- **Time-Saved Dashboard**: A real-time counter in the extension showing exactly how much of your life the AI has reclaimed.
-- **Bilingual Optimized**: Fine-tuned markers for both English and French content.
-- **Persistent Caching**: Locally stores analyzed segments to minimize API calls and latency.
+- **AI Sponsor Detection**: Finds sponsor segments from YouTube transcript windows.
+- **Automatic Skipping**: Jumps over detected sponsor ranges during playback.
+- **Scanning Animation**: Shows an in-player loading badge while the backend analyzes a video.
+- **Custom Mini Timeline**: Displays detected sponsor ranges on an extension-owned timeline, avoiding fragile YouTube progress-bar DOM injection.
+- **Skip Banner**: Shows a glass-style confirmation banner with an `Unskip` action.
+- **Extension Popup Dashboard**: Tracks total skips, time saved, API status, and backend URL configuration.
+- **Persistent Caching**: Stores analyzed video results locally to reduce repeat analysis.
+- **Bilingual Detection Markers**: Includes English and French sponsor phrases and transition cues.
+- **Landing Page**: Product page with the recorded demo video, feature overview, and support section.
+- **Donation Flow**: Mollie payment session creation, loading state before redirect, local mock checkout, and animated support stats after payment.
 
 ---
 
-## 🚀 Getting Started
+## Getting Started
 
 ### 1. Backend Setup
 
-Ensure you have `uv` installed.
+Install dependencies and run the FastAPI server:
 
 ```bash
-# Clone and install
-git clone https://github.com/NassAbd/youskip-ai.git
-cd youskip-ai
 uv sync
-
-# Configure environment
-cp .env.example .env
-# Set your YSA_GOOGLE_API_KEY in .env
-
-# Run server
 uv run uvicorn youskip_ai.main:app --reload
 ```
 
-### 2. Chrome Extension Setup
+Optional environment setup:
 
-1. Open Chrome and navigate to `chrome://extensions/`.
-2. Enable **Developer mode** (top right).
-3. Click **Load unpacked** and select the `extension/` folder.
-4. Open the extension popup to verify the **API Connected** status.
+```bash
+cp .env.example .env
+```
+
+Set `YSA_GOOGLE_API_KEY` in `.env` to use Gemini. Without a live Mollie key, the donation flow runs in mock mode.
+
+### 2. Landing Page
+
+Start the backend, then open:
+
+```text
+http://localhost:8000
+```
+
+The demo video is served from:
+
+```text
+/landing/demo.mp4
+```
+
+### 3. Chrome Extension
+
+1. Open `chrome://extensions/`.
+2. Enable **Developer mode**.
+3. Click **Load unpacked**.
+4. Select the `extension/` folder.
+5. Open the popup and confirm the backend URL is `http://localhost:8000`.
 
 ---
 
-## 📊 Monitoring & API
+## API
 
-### Stats Dashboard
-Access real-time Gemini API metrics (tokens, requests) and cache size:
-`GET http://localhost:8000/stats`
+Analyze a YouTube video:
 
-### Health Check
-Verify backend availability:
-`GET http://localhost:8000/health`
+```text
+GET /analyze/{video_id}
+```
+
+Health check:
+
+```text
+GET /health
+```
+
+Runtime metrics:
+
+```text
+GET /stats
+```
+
+Donation stats:
+
+```text
+GET /api/v1/donations/stats
+```
+
+Create a donation session:
+
+```text
+POST /api/v1/donations
+```
 
 ---
 
-## 🛡 License
-This project is licensed under the **MIT License**. See the [LICENSE](LICENSE) file for details.
+## Development Notes
 
-Created with ❤️ by **Abdallah Nassur**
+- The extension content script runs on `youtube.com` and calls the local backend.
+- The in-video sponsor timeline is intentionally independent from YouTube's internal progress bar DOM.
+- The payment redirect returns to `/?payment=success#donation`, then the landing page animates the raised amount, backer count, and progress bar.
+- Mock Mollie sessions are used when `YSA_MOLLIE_API_KEY` is unset or set to `mock`.
+
+---
+
+## Testing
+
+Run the test suite:
+
+```bash
+uv run pytest
+```
+
+Useful focused checks:
+
+```bash
+uv run pytest tests/test_donations.py
+node --check extension/content.js
+node --check extension/popup.js
+node --check landing/app.js
+```
+
+---
+
+## License
+
+This project is licensed under the MIT License. See [LICENSE](LICENSE).
+
+Created by Abdallah Nassur.
